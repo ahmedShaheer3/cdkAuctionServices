@@ -4,14 +4,14 @@ import { Construct } from "constructs";
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 export class DatabaseStack extends Stack {
-  public readonly databaseTable: ITable;
+  public readonly databaseTables: ITable;
 
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
     /*
      ** Database tables
      */
-    this.databaseTable = new DynamodbTable(this, "CdkAuctionTable", {
+    this.databaseTables = new DynamodbTable(this, "CdkAuctionTable", {
       partitionKey: {
         name: "id",
         type: AttributeType.STRING,

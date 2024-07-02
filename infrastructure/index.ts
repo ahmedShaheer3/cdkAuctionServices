@@ -5,13 +5,17 @@
 import "source-map-support/register";
 import { App } from "aws-cdk-lib";
 import { DatabaseStack } from "./resourcesStack/DatabaseStack";
-import { LambdaApiStack } from "./resourcesStack/LambdaApiStack";
+import { ApiGatewayStack } from "./resourcesStack/ApiGatewayStack";
+import { LambdaStack } from "./resourcesStack/LambdaStack";
 
 const app = new App();
 /*
  ** Stacks
  */
 const Databases = new DatabaseStack(app, "DatabaseStack");
-new LambdaApiStack(app, "LambdaApiStack", {
-  databaseTable: Databases.databaseTable,
+const lambdas = new LambdaStack(app, "LambdaApiStack", {
+  databaseTable: Databases.databaseTables,
+});
+new ApiGatewayStack(app, "ApiStack", {
+  lambdaFunctions: lambdas.auctionFunctions,
 });
