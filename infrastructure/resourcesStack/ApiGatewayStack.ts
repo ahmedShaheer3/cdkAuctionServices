@@ -1,9 +1,10 @@
 import { Stack, StackProps } from "aws-cdk-lib";
-import { LambdaIntegration, RestApi } from "aws-cdk-lib/aws-apigateway";
+import { RestApi } from "aws-cdk-lib/aws-apigateway";
 import { Construct } from "constructs";
+import { LambdaFunctionsType } from "../../src/models/infrastucture";
 
 interface ApiGatewayStackProps extends StackProps {
-  lambdaFunctions: LambdaIntegration;
+  lambdaFunctions: LambdaFunctionsType;
 }
 
 export class ApiGatewayStack extends Stack {
@@ -16,10 +17,10 @@ export class ApiGatewayStack extends Stack {
     /*
      ** Auction apis
      */
-    const auctionResourse = auctionApis.root.addResource("auction");
-    auctionResourse.addMethod("GET", props.lambdaFunctions);
-    auctionResourse.addMethod("POST", props.lambdaFunctions);
-    auctionResourse.addMethod("PATCH", props.lambdaFunctions);
-    auctionResourse.addMethod("DELETE", props.lambdaFunctions);
+    const auctionResource = auctionApis.root.addResource("auction");
+    auctionResource.addMethod("POST", props.lambdaFunctions.createAuction);
+    auctionResource.addMethod("PATCH", props.lambdaFunctions.updateAuction);
+    auctionResource.addMethod("DELETE", props.lambdaFunctions.deleteAuction);
+    auctionResource.addMethod("GET", props.lambdaFunctions.getAuction);
   }
 }

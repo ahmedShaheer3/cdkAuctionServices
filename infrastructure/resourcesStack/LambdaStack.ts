@@ -1,19 +1,17 @@
 import { Stack, StackProps } from "aws-cdk-lib";
 import { LambdaIntegration } from "aws-cdk-lib/aws-apigateway";
-import { ITable } from "aws-cdk-lib/aws-dynamodb";
 import { Code, Function as LambdaFunction, Runtime } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
+import { databaseTablesType, LambdaFunctionsType } from "../../src/models/infrastucture";
 
 interface LambdaStackProps extends StackProps {
-  databaseTable: ITable;
+  databaseTables: databaseTablesType;
 }
 
 export class LambdaStack extends Stack {
-  public readonly auctionFunctions: LambdaIntegration;
+  public readonly lambdaFunctions: LambdaFunctionsType;
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
-
     /*
      **  Lambda Functions
      */
@@ -29,9 +27,45 @@ export class LambdaStack extends Stack {
         `),
       handler: "index.handler",
       environment: {
-        TABLE_NAME: props.databaseTable.tableName,
+        AUCTION_TABLE_NAME: props.databaseTables?.auctionTable.tableName,
       },
     });
-    this.auctionFunctions = new LambdaIntegration(createAuction);
+    const updateAuction = new LambdaFunction(this, "updateAuction", {
+      runtime: Runtime.NODEJS_20_X,
+      code: Code.fromAsset("lambda"),
+      handler: "updateAuction.handler",
+      environment: {
+        AUCTION_TABLE_NAME: props.databaseTables.auctionTable.tableName,
+      },
+    });
+
+    const deleteAuction = new LambdaFunction(this, "deleteAuction", {
+      runtime: Runtime.NODEJS_20_X,
+      code: Code.fromAsset("lambda"),
+      handler: "deleteAuction.handler",
+      environment: {
+        AUCTION_TABLE_NAME: props.databaseTables.auctionTable.tableName,
+      },
+    });
+
+    const getAuction = new LambdaFunction(this, "getAuction", {
+      runtime: Runtime.NODEJS_20_X,
+      code: Code.fromAsset("lambda"),
+      handler: "getAuction.handler",
+      environment: {
+        AUCTION_TABLE_NAME: props.databaseTables.auctionTable.tableName,
+      },
+    });
+    /*
+     ** Grant Lambda permissions to interact with the DynamoDB table
+     */
+    props.databaseTables.auctionTable.grantReadWriteData(createAuction);
+
+    this.lambdaFunctions = {
+      createAuction: new LambdaIntegration(createAuction),
+      updateAuction: new LambdaIntegration(updateAuction),
+      deleteAuction: new LambdaIntegration(deleteAuction),
+      getAuction: new LambdaIntegration(getAuction),
+    };
   }
 }

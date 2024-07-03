@@ -1,13 +1,12 @@
-import axios from 'axios';
-import {FCM_SERVER_KEY, FCM_URL} from '../config/FCMConfig';
-import {CognitoJwtVerifier} from 'aws-jwt-verify';
-import {CognitoAccessTokenPayload} from 'aws-jwt-verify/jwt-model';
-import jwt from 'jsonwebtoken';
-import {logType} from '../models/userAdditionalTypes';
+import axios from "axios";
+import { CognitoJwtVerifier } from "aws-jwt-verify";
+import { CognitoAccessTokenPayload } from "aws-jwt-verify/jwt-model";
+import jwt from "jsonwebtoken";
+import { FCM_SERVER_KEY, FCM_URL } from "../config";
 
 export class CommonUtils {
   constructor() {
-    console.debug('common utils constructor called');
+    console.debug("common utils constructor called");
   }
   /*
    **Get unique array - remove duplicates
@@ -34,12 +33,12 @@ export class CommonUtils {
    **
    To title case
    */
-  toTitleCase = (text = '', allWords = false) => {
+  toTitleCase = (text = "", allWords = false) => {
     if (allWords) {
       return text
-        .split(' ')
+        .split(" ")
         .map((item) => item[0].toUpperCase() + item.substring(1, item.length))
-        .join(' ');
+        .join(" ");
     }
     return text[0].toUpperCase() + text.substring(1, text.length);
   };
@@ -49,7 +48,7 @@ export class CommonUtils {
   getUniqueObject = <T, Key extends keyof T>(data: T[], keyName: Key): Record<Key, T> => {
     const newData = {} as Record<Key, T>;
     data.forEach((item: T) => {
-      newData[item[keyName] as Key] = {...item};
+      newData[item[keyName] as Key] = { ...item };
     });
     return newData;
   };
@@ -57,7 +56,7 @@ export class CommonUtils {
 
 export class AppUtils extends CommonUtils {
   constructor() {
-    console.debug('app utils construtor called');
+    console.debug("app utils construtor called");
     super();
   }
   /*
@@ -65,8 +64,8 @@ export class AppUtils extends CommonUtils {
    */
   generateTempPass = (): string => {
     const length = 8;
-    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let retVal = '';
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let retVal = "";
     for (let i = 0, n = charset.length; i < length; ++i) {
       retVal += charset.charAt(Math.floor(Math.random() * n));
     }
@@ -77,37 +76,37 @@ export class AppUtils extends CommonUtils {
    */
   sendPushNotification = async (title: string, message: string, token: string) => {
     const response = await axios({
-      method: 'post',
+      method: "post",
       url: FCM_URL,
       data: {
-        notification: {title, body: message},
+        notification: { title, body: message },
         to: token,
       },
       headers: {
-        'Content-type': 'application/json',
+        "Content-type": "application/json",
         Authorization: `Key=${FCM_SERVER_KEY}`,
       },
     });
-    console.log('send_push_notification', response);
+    console.log("send_push_notification", response);
     return response;
   };
   /*
    ** Verifying cognito token
    */
   verifyCognitoToken = async (
-    authorizationToken: string,
+    authorizationToken: string
   ): Promise<CognitoAccessTokenPayload | undefined> => {
     try {
-      if (!authorizationToken.startsWith('Bearer ')) {
-        throw new Error('Invalid token format');
+      if (!authorizationToken.startsWith("Bearer ")) {
+        throw new Error("Invalid token format");
       }
       // Spliting token from bearer token
-      const token = authorizationToken.split(' ')[1];
-      console.log('token is:', token);
+      const token = authorizationToken.split(" ")[1];
+      console.log("token is:", token);
       // creating instace to verify token
       const verifier = CognitoJwtVerifier.create({
         userPoolId: process.env.USER_POOL_ID as string,
-        tokenUse: 'access',
+        tokenUse: "access",
         clientId: process.env.CLIENT_ID as string,
       });
 
@@ -115,8 +114,8 @@ export class AppUtils extends CommonUtils {
       const userData = await verifier.verify(token);
       return userData;
     } catch (error) {
-      console.log('Token validation failed', error);
-      throw new Error('Token validation failed');
+      console.log("Token validation failed", error);
+      throw new Error("Token validation failed");
     }
   };
   /*
@@ -124,18 +123,18 @@ export class AppUtils extends CommonUtils {
    */
   verifyJwtToken = (authorizationToken: string) => {
     // Spliting token from bearer token
-    const token = authorizationToken.split(' ')[1];
-    console.log('token:', token);
-    const {payload} = jwt.decode(token, {complete: true});
+    const token = authorizationToken.split(" ")[1];
+    console.log("token:", token);
+    const { payload } = jwt.decode(token, { complete: true });
     // getting current time stamp
     const currentTimestamp = Math.floor(Date.now() / 1000);
     // Get the token timestamp in seconds
     const expirationTimestamp = payload?.exp;
     //check wheater the token is expire or not
     if (currentTimestamp > expirationTimestamp) {
-      throw new Error('Token expire');
+      throw new Error("Token expire");
     } else {
-      return payload as {sub: string; exp: number};
+      return payload as { sub: string; exp: number };
     }
   };
   /*
@@ -144,28 +143,28 @@ export class AppUtils extends CommonUtils {
   verifyFaceBookToken = async (authorizationToken: string) => {
     try {
       // Spliting token from bearer token
-      const token = authorizationToken.split(' ')[1];
+      const token = authorizationToken.split(" ")[1];
       const url = `https://graph.facebook.com/v17.0/debug_token?input_token=${token}&access_token=966153207740123%7C4aJJISpbAabapainPiqe-WT8TnM`;
 
       // api call for facebook token validation
       const result = await axios.request({
-        method: 'get',
+        method: "get",
         maxBodyLength: Infinity,
         url,
         headers: {},
       });
-      console.log('validating facebook token api call ', result?.data?.data);
+      console.log("validating facebook token api call ", result?.data?.data);
       // getting current time stamp
       const currentTimestamp = Math.floor(Date.now() / 1000);
       //   // Get the current timestamp in seconds
       const expirationTimestamp = result?.data?.data?.expires_at;
       // checking token expiretion
       if (currentTimestamp > expirationTimestamp) {
-        throw new Error('Toekn expired');
+        throw new Error("Toekn expired");
       }
       return result?.data?.data;
     } catch (error) {
-      console.log('verifyFaceBookToken error', error);
+      console.log("verifyFaceBookToken error", error);
       throw new Error(error);
     }
   };
@@ -182,11 +181,11 @@ export class AppUtils extends CommonUtils {
   /*
    ** Getting unique data per day
    */
-  getUniqueDataPerDay = (data: {createdAt: string}[]) => {
+  getUniqueDataPerDay = (data: { createdAt: string }[]) => {
     // getting unique data on a single day
     const uniqueLogsByDate = new Map();
     data.forEach((log) => {
-      const dateKey = log.createdAt.split('T')[0];
+      const dateKey = log.createdAt.split("T")[0];
       if (!uniqueLogsByDate.has(dateKey)) {
         uniqueLogsByDate.set(dateKey, log);
       }
@@ -194,35 +193,5 @@ export class AppUtils extends CommonUtils {
     // Convert the map values back to an array if needed
     const uniqueLogsArray = Array.from(uniqueLogsByDate.values());
     return uniqueLogsArray;
-  };
-  /*
-   ** Checking if streak is continued
-   */
-  isStreakContinue = (logData: logType[]) => {
-    let isYesterdayLogCreated = false;
-    let isTodayLogCreated = false;
-    let startDate = new Date();
-    // getting yerterday date
-    const tempDate = startDate.setHours(startDate.getHours() - 24);
-    const yesterdayDate = new Date(tempDate);
-    startDate = new Date();
-    console.log('yesterdayDate:', yesterdayDate);
-    console.log('startDate:', startDate);
-    for (let index = 0; index < logData.length; index++) {
-      console.log('unique item created at', logData[index]);
-
-      const objectDate = new Date(logData[index]?.createdAt);
-      // checking if both date bath means user listned today if not then user has not listned today
-      if (startDate?.getDate() === objectDate?.getDate()) {
-        isTodayLogCreated = true;
-      }
-      // checking if both date bath means user listned yesterday if not then user has not listned yesterday
-      else if (yesterdayDate?.getDate() === objectDate?.getDate()) {
-        isYesterdayLogCreated = true;
-      }
-    }
-    console.log('isYesterdayLogCreated:', isYesterdayLogCreated);
-    console.log('isTodayLogCreated:', isTodayLogCreated);
-    return {isYesterdayLogCreated, isTodayLogCreated};
   };
 }

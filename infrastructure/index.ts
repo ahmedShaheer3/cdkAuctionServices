@@ -14,8 +14,8 @@ const app = new App();
  */
 const Databases = new DatabaseStack(app, "DatabaseStack");
 const lambdas = new LambdaStack(app, "LambdaApiStack", {
-  databaseTable: Databases.databaseTables,
+  databaseTables: Databases.databaseTables,
 });
 new ApiGatewayStack(app, "ApiStack", {
-  lambdaFunctions: lambdas.auctionFunctions,
+  lambdaFunctions: lambdas.lambdaFunctions,
 });
