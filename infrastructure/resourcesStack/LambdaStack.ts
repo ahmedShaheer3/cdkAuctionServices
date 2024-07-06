@@ -1,8 +1,10 @@
 import { Stack, StackProps } from "aws-cdk-lib";
 import { LambdaIntegration } from "aws-cdk-lib/aws-apigateway";
-import { Code, Function as LambdaFunction, Runtime } from "aws-cdk-lib/aws-lambda";
+import { Code, Runtime } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 import { databaseTablesType, LambdaFunctionsType } from "../../src/models/infrastucture";
+import { NodejsFunction as LambdaFunction } from "aws-cdk-lib/aws-lambda-nodejs";
+import { join } from "path";
 
 interface LambdaStackProps extends StackProps {
   databaseTables: databaseTablesType;
@@ -17,14 +19,7 @@ export class LambdaStack extends Stack {
      */
     const createAuction = new LambdaFunction(this, "createAuction", {
       runtime: Runtime.NODEJS_20_X,
-      code: Code.fromInline(`
-        exports.handler = async function(event) {
-          return {
-            statusCode: 200,
-            body: JSON.stringify('Hello World!'),
-          };
-        };
-        `),
+      entry: join(__dirname, "../../src/functions/auctions/createAuction.ts"),
       handler: "index.handler",
       environment: {
         AUCTION_TABLE_NAME: props.databaseTables?.auctionTable.tableName,
@@ -32,8 +27,8 @@ export class LambdaStack extends Stack {
     });
     const updateAuction = new LambdaFunction(this, "updateAuction", {
       runtime: Runtime.NODEJS_20_X,
-      code: Code.fromAsset("lambda"),
-      handler: "updateAuction.handler",
+      entry: join(__dirname, "../../src/functions/auctions/updateAuction.ts"),
+      handler: "index.handler",
       environment: {
         AUCTION_TABLE_NAME: props.databaseTables.auctionTable.tableName,
       },
@@ -41,8 +36,8 @@ export class LambdaStack extends Stack {
 
     const deleteAuction = new LambdaFunction(this, "deleteAuction", {
       runtime: Runtime.NODEJS_20_X,
-      code: Code.fromAsset("lambda"),
-      handler: "deleteAuction.handler",
+      entry: join(__dirname, "../../src/functions/auctions/deleteAuction.ts"),
+      handler: "index.handler",
       environment: {
         AUCTION_TABLE_NAME: props.databaseTables.auctionTable.tableName,
       },
@@ -50,8 +45,17 @@ export class LambdaStack extends Stack {
 
     const getAuction = new LambdaFunction(this, "getAuction", {
       runtime: Runtime.NODEJS_20_X,
-      code: Code.fromAsset("lambda"),
-      handler: "getAuction.handler",
+      entry: join(__dirname, "../../src/functions/auctions/getAuction.ts"),
+      handler: "index.handler",
+      environment: {
+        AUCTION_TABLE_NAME: props.databaseTables.auctionTable.tableName,
+      },
+    });
+
+    const getAuctions = new LambdaFunction(this, "getAuctions", {
+      runtime: Runtime.NODEJS_20_X,
+      entry: join(__dirname, "../../src/functions/auctions/getAuctions.ts"),
+      handler: "index.handler",
       environment: {
         AUCTION_TABLE_NAME: props.databaseTables.auctionTable.tableName,
       },
@@ -66,6 +70,7 @@ export class LambdaStack extends Stack {
       updateAuction: new LambdaIntegration(updateAuction),
       deleteAuction: new LambdaIntegration(deleteAuction),
       getAuction: new LambdaIntegration(getAuction),
+      getAuctions: new LambdaIntegration(getAuctions),
     };
   }
 }
